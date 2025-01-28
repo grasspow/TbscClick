@@ -1,0 +1,9 @@
+{
+  "key.tbscclick.toggleright": "自动右击",
+  "key.tbscclick.toggleleft": "自动左击",
+  "key.tbscclick.togglesmartattack": "智能攻击",
+  "key.tbscclick.toggleholdleft": "保持长按左键",
+  "key.tbscclick.toggleholdright": "保持长按右键",
+  "key.tbscclick.speed": "更改自动点击速度",
+  "key.categories.tbscclick": "TbscClick"
+}
