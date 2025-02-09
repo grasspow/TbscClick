@@ -5,6 +5,7 @@
   "key.tbscclick.toggleholdleft": "Hold Left Mouse Button",
   "key.tbscclick.toggleholdright": "Hold Right Mouse Button",
   "key.tbscclick.speed": "Change auto clicking speed",
+  "key.tbscclick.crouch": "Auto-Crouch Button",
 
   "key.categories.tbscclick": "TbscClick"
 }

@@ -30,6 +30,7 @@ public interface IClick {
     IKeyBind getToggleSmartAttackKey();
     IKeyBind getToggleHoldRightKey();
     IKeyBind getSpeedKey();
+    IKeyBind getCrouchKey();
 
     int getTicksStepBetweenClicks();
     int getMaxTicksBetweenClicks();

@@ -1,6 +1,8 @@
 package tbsc.clickmod;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import tbsc.clickmod.impl.TbscClick;
 
@@ -15,6 +17,7 @@ import java.util.Map;
 /**
  * Because this mod supports multiple versions of Minecraft at the same time, this support class will contain as much
  * general code as possible, and the main class will have all version-dependent code.
+ *
  * @author tbsc on 02/09/2021
  */
 public class Compat {
@@ -24,11 +27,13 @@ public class Compat {
     public static boolean shouldLeftClick = false;
     public static boolean shouldSmartAttack = false;
     public static boolean shouldRightClick = false;
+    public static boolean shouldCrouch = false;
     public static boolean holdingRightButton = false;
     public static int clickTickInterval = 1;
     boolean holdRightWasPressed = false;
     private int leftCooldown = 0;
     private int rightCooldown = 0;
+    private int crouchCooldown = 0;
 
     public Compat(TbscClick mod) {
         this.mod = mod;
@@ -80,6 +85,16 @@ public class Compat {
                 mod.setHoldButton(mod.getUseKey(), holdingRightButton);
                 holdRightWasPressed = false;
             }
+
+            /* Hold Crouch*/
+            if (shouldCrouch) {
+                if (crouchCooldown == 0) {
+                    crouch();
+                    crouchCooldown = clickTickInterval;
+                } else {
+                    crouchCooldown--;
+                }
+            }
         }
     }
 
@@ -109,6 +124,10 @@ public class Compat {
                 clickTickInterval = mod.getMinTicksBetweenClicks();
             }
             mod.sendMessageWithId("New auto click interval: every " + clickTickInterval + " tick" + plural, chatId);
+        }
+
+        if (mod.getCrouchKey().isDown()) {
+            shouldCrouch = !shouldCrouch;
         }
     }
 
@@ -198,6 +217,22 @@ public class Compat {
         }
     }
 
+    private static boolean isSneaking = false;
+
+    private void crouch() {
+        isSneaking = !isSneaking;
+        Minecraft mc = mod.getMinecraft();
+        LocalPlayer player = mc.player;
+        if (mc.getConnection() != null && player != null) {
+            player.setShiftKeyDown(isSneaking);
+            ServerboundPlayerCommandPacket.Action action = isSneaking
+                    ? ServerboundPlayerCommandPacket.Action.PRESS_SHIFT_KEY
+                    : ServerboundPlayerCommandPacket.Action.RELEASE_SHIFT_KEY;
+
+            mc.getConnection().send(new ServerboundPlayerCommandPacket(player, action));
+        }
+    }
+
     private void disableAutoLeftByConflict() {
         if (shouldLeftClick) {
             shouldLeftClick = false;
@@ -240,6 +275,9 @@ public class Compat {
         }
         if (holdingRightButton) {
             renderList.add("Holding Right Button");
+        }
+        if (shouldCrouch) {
+            renderList.add("Auto Crouching");
         }
 
         for (int i = 0; i < renderList.size(); ++i) {

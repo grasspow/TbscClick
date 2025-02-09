@@ -40,12 +40,14 @@ public class TbscClick implements IClick {
     public static KeyMapping keyToggleSmartAttack;
     public static KeyMapping keyToggleHoldRight;
     public static KeyMapping keySpeed;
+    public static KeyMapping keyCrouch;
     private IKeyBind myKeyUse;
     private IKeyBind myKeyToggleRight;
     private IKeyBind myKeyToggleLeft;
     private IKeyBind myKeyToggleSmartAttack;
     private IKeyBind myKeyToggleHoldRight;
     private IKeyBind myKeySpeed;
+    private IKeyBind myKeyCrouch;
 
     private int ticksStepBetweenClicks = Config.DEF_TICKS_STEP;
     private int maxTicksBetweenClicks = Config.DEF_MAX_TICKS;
@@ -71,12 +73,14 @@ public class TbscClick implements IClick {
         keyToggleSmartAttack = new KeyMapping("key.tbscclick.togglesmartattack", GLFW.GLFW_KEY_V, "key.categories.tbscclick");
         keyToggleHoldRight = new KeyMapping("key.tbscclick.toggleholdright", GLFW.GLFW_KEY_B, "key.categories.tbscclick");
         keySpeed = new KeyMapping("key.tbscclick.speed", GLFW.GLFW_KEY_N, "key.categories.tbscclick");
+        keyCrouch = new KeyMapping("key.tbscclick.crouch", GLFW.GLFW_KEY_APOSTROPHE, "key.categories.tbscclick");
 
         event.register(keyToggleRight);
         event.register(keyToggleLeft);
         event.register(keyToggleSmartAttack);
         event.register(keyToggleHoldRight);
         event.register(keySpeed);
+        event.register(keyCrouch);
 
         minecraft = Minecraft.getInstance();
 
@@ -86,6 +90,7 @@ public class TbscClick implements IClick {
         myKeyToggleSmartAttack = new KeyBind(keyToggleSmartAttack);
         myKeyToggleHoldRight = new KeyBind(keyToggleHoldRight);
         myKeySpeed = new KeyBind(keySpeed);
+        myKeyCrouch = new KeyBind(keyCrouch);
 
         Config.loadConfig(Config.CONFIG_SPEC, FMLPaths.CONFIGDIR.get().resolve("TbscClick.toml"));
         processConfig();
@@ -202,6 +207,11 @@ public class TbscClick implements IClick {
     @Override
     public IKeyBind getSpeedKey() {
         return myKeySpeed;
+    }
+
+    @Override
+    public IKeyBind getCrouchKey() {
+        return myKeyCrouch;
     }
 
     @Override
