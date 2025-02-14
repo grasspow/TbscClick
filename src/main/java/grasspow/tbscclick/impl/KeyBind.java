@@ -1,7 +1,7 @@
-package tbsc.clickmod.impl;
+package grasspow.tbscclick.impl;
 
+import grasspow.tbscclick.IKeyBind;
 import net.minecraft.client.KeyMapping;
-import tbsc.clickmod.IKeyBind;
 
 /**
  * @author tbsc on 02/09/2021

@@ -1,46 +1,47 @@
-package tbsc.clickmod.impl;
+package grasspow.tbscclick.impl;
 
+import com.mojang.logging.LogUtils;
+import grasspow.tbscclick.Compat;
+import grasspow.tbscclick.IClick;
+import grasspow.tbscclick.IKeyBind;
+import grasspow.tbscclick.IRayTrace;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.neoforge.client.ClientHooks;
+import net.neoforged.neoforge.client.event.*;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.Lazy;
+import org.slf4j.Logger;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.PauseScreen;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MessageSignature;
 import net.minecraft.world.InteractionHand;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLPaths;
 import org.lwjgl.glfw.GLFW;
-import tbsc.clickmod.Compat;
-import tbsc.clickmod.IClick;
-import tbsc.clickmod.IKeyBind;
-import tbsc.clickmod.IRayTrace;
 
+// The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(TbscClick.MODID)
 public class TbscClick implements IClick {
-
     public static final String MODID = "tbscclick";
 
-    public static KeyMapping keyToggleRight;
-    public static KeyMapping keyToggleLeft;
-    public static KeyMapping keyToggleSmartAttack;
-    public static KeyMapping keyToggleHoldRight;
-    public static KeyMapping keySpeed;
-    public static KeyMapping keyCrouch;
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    public static Lazy<KeyMapping> keyToggleRight = Lazy.of(() -> new KeyMapping("key.tbscclick.toggleright", GLFW.GLFW_KEY_G, "key.categories.tbscclick"));
+    public static Lazy<KeyMapping> keyToggleLeft = Lazy.of(() -> new KeyMapping("key.tbscclick.toggleleft", GLFW.GLFW_KEY_H, "key.categories.tbscclick"));
+    public static Lazy<KeyMapping> keyToggleSmartAttack = Lazy.of(() -> new KeyMapping("key.tbscclick.togglesmartattack", GLFW.GLFW_KEY_V, "key.categories.tbscclick"));
+    public static Lazy<KeyMapping> keyToggleHoldRight = Lazy.of(() -> new KeyMapping("key.tbscclick.toggleholdright", GLFW.GLFW_KEY_B, "key.categories.tbscclick"));
+    public static Lazy<KeyMapping> keySpeed = Lazy.of(() -> new KeyMapping("key.tbscclick.speed", GLFW.GLFW_KEY_N, "key.categories.tbscclick"));
+    public static Lazy<KeyMapping> keyCrouch = Lazy.of(() -> new KeyMapping("key.tbscclick.crouch", GLFW.GLFW_KEY_APOSTROPHE, "key.categories.tbscclick"));
     private IKeyBind myKeyUse;
     private IKeyBind myKeyToggleRight;
     private IKeyBind myKeyToggleLeft;
@@ -49,67 +50,57 @@ public class TbscClick implements IClick {
     private IKeyBind myKeySpeed;
     private IKeyBind myKeyCrouch;
 
-    private int ticksStepBetweenClicks = Config.DEF_TICKS_STEP;
-    private int maxTicksBetweenClicks = Config.DEF_MAX_TICKS;
-    private int minTicksBetweenClicks = Config.DEF_MIN_TICKS;
+    private static int ticksStepBetweenClicks = Config.DEF_TICKS_STEP;
+    private static int maxTicksBetweenClicks = Config.DEF_MAX_TICKS;
+    private static int minTicksBetweenClicks = Config.DEF_MIN_TICKS;
 
-    private Minecraft minecraft = null;
-
+    public Minecraft minecraft = null;
     private Compat compat;
 
-    public TbscClick() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetupEvent);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onConfigReloaded);
+    public TbscClick(ModContainer container,IEventBus bus) {
+        container.registerConfig(ModConfig.Type.COMMON, Config.CONFIG_SPEC);
+        bus.addListener(this::onRegisterKeyMappingsEvent);
+        bus.addListener(this::onLoad);
+        NeoForge.EVENT_BUS.addListener(this::onTick);
+        NeoForge.EVENT_BUS.addListener(this::onInitGuiPre);
+        NeoForge.EVENT_BUS.addListener(this::onKeyPressed);
+        NeoForge.EVENT_BUS.addListener(this::onRenderGameOverlay);
     }
 
     @SubscribeEvent
-    public void onClientSetupEvent(RegisterKeyMappingsEvent event) {
+    public void onRegisterKeyMappingsEvent(RegisterKeyMappingsEvent event) {
         compat = new Compat(this);
-
-        MinecraftForge.EVENT_BUS.register(this);
-
-        keyToggleRight = new KeyMapping("key.tbscclick.toggleright", GLFW.GLFW_KEY_G, "key.categories.tbscclick");
-        keyToggleLeft = new KeyMapping("key.tbscclick.toggleleft", GLFW.GLFW_KEY_H, "key.categories.tbscclick");
-        keyToggleSmartAttack = new KeyMapping("key.tbscclick.togglesmartattack", GLFW.GLFW_KEY_V, "key.categories.tbscclick");
-        keyToggleHoldRight = new KeyMapping("key.tbscclick.toggleholdright", GLFW.GLFW_KEY_B, "key.categories.tbscclick");
-        keySpeed = new KeyMapping("key.tbscclick.speed", GLFW.GLFW_KEY_N, "key.categories.tbscclick");
-        keyCrouch = new KeyMapping("key.tbscclick.crouch", GLFW.GLFW_KEY_APOSTROPHE, "key.categories.tbscclick");
-
-        event.register(keyToggleRight);
-        event.register(keyToggleLeft);
-        event.register(keyToggleSmartAttack);
-        event.register(keyToggleHoldRight);
-        event.register(keySpeed);
-        event.register(keyCrouch);
-
         minecraft = Minecraft.getInstance();
+        processConfig();
+        event.register(keyToggleRight.get());
+        event.register(keyToggleLeft.get());
+        event.register(keyToggleSmartAttack.get());
+        event.register(keyToggleHoldRight.get());
+        event.register(keySpeed.get());
+        event.register(keyCrouch.get());
 
         myKeyUse = new KeyBind(minecraft.options.keyUse);
-        myKeyToggleRight = new KeyBind(keyToggleRight);
-        myKeyToggleLeft = new KeyBind(keyToggleLeft);
-        myKeyToggleSmartAttack = new KeyBind(keyToggleSmartAttack);
-        myKeyToggleHoldRight = new KeyBind(keyToggleHoldRight);
-        myKeySpeed = new KeyBind(keySpeed);
-        myKeyCrouch = new KeyBind(keyCrouch);
+        myKeyToggleRight = new KeyBind(keyToggleRight.get());
+        myKeyToggleLeft = new KeyBind(keyToggleLeft.get());
+        myKeyToggleSmartAttack = new KeyBind(keyToggleSmartAttack.get());
+        myKeyToggleHoldRight = new KeyBind(keyToggleHoldRight.get());
+        myKeySpeed = new KeyBind(keySpeed.get());
+        myKeyCrouch = new KeyBind(keyCrouch.get());
+    }
 
-        Config.loadConfig(Config.CONFIG_SPEC, FMLPaths.CONFIGDIR.get().resolve("TbscClick.toml"));
+    private static void processConfig() {
+        ticksStepBetweenClicks = Config.TICK_STEP.get();
+        maxTicksBetweenClicks = Config.MAX_TICKS.get();
+        minTicksBetweenClicks = Config.MIN_TICKS.get();
+    }
+
+    @SubscribeEvent
+    void onLoad(final ModConfigEvent event) {
         processConfig();
     }
 
-    private void processConfig() {
-        ticksStepBetweenClicks = Config.ticksStep.get();
-        maxTicksBetweenClicks = Config.maxTicks.get();
-        minTicksBetweenClicks = Config.minTicks.get();
-    }
-
-    public void onConfigReloaded(ModConfigEvent event) {
-        if (event instanceof ModConfigEvent.Reloading) {
-            processConfig();
-        }
-    }
-
     @SubscribeEvent
-    public void onTick(TickEvent.ClientTickEvent event) {
+    public void onTick(ClientTickEvent.Post event) {
         compat.onTick();
     }
 
@@ -124,8 +115,8 @@ public class TbscClick implements IClick {
     }
 
     @SubscribeEvent
-    public void onRenderGameOverlay(RenderGuiOverlayEvent event) {
-        if (event.getOverlay() == VanillaGuiOverlay.DEBUG_TEXT.type()) {
+    public void onRenderGameOverlay(RenderGuiLayerEvent.Post event) {
+        if (event.getName() == VanillaGuiLayers.DEBUG_OVERLAY) {
             compat.onRenderGameOverlay();
         }
     }
@@ -164,7 +155,7 @@ public class TbscClick implements IClick {
 
     @Override
     public void postClickInputEvent() {
-        clickInputEvent = ForgeHooksClient.onClickInput(0, minecraft.options.keyAttack, InteractionHand.MAIN_HAND);
+        clickInputEvent = ClientHooks.onClickInput(0, minecraft.options.keyAttack, InteractionHand.MAIN_HAND);
     }
 
     @Override
@@ -312,10 +303,7 @@ public class TbscClick implements IClick {
     };
 
     @Override
-    public void sendMessageWithId(String message, int id) {
-        compat.reflInvokeMethod(ChatComponent.class, minecraft.gui.getChat(), "m_240964_",
-                new Class[]{Component.class, MessageSignature.class, GuiMessageTag.class},
-                new Object[]{Component.literal(message), new MessageSignature(signatureBytes), GuiMessageTag.system()});
+    public void sendMessageWithId(String message) {
+        minecraft.gui.getChat().addMessage(Component.literal(message), new MessageSignature(signatureBytes), GuiMessageTag.system());
     }
-
 }

@@ -1,4 +1,4 @@
-package tbsc.clickmod;
+package grasspow.tbscclick;
 
 /**
  * @author tbsc on 02/09/2021

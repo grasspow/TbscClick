@@ -1,10 +1,10 @@
-package tbsc.clickmod.impl;
+package grasspow.tbscclick.impl;
 
+import grasspow.tbscclick.IRayTrace;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import tbsc.clickmod.IRayTrace;
 
 /**
  * @author tbsc on 02/09/2021

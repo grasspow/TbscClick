@@ -1,4 +1,4 @@
-package tbsc.clickmod;
+package grasspow.tbscclick;
 
 import net.minecraft.client.Minecraft;
 

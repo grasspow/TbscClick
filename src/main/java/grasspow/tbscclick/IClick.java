@@ -1,4 +1,4 @@
-package tbsc.clickmod;
+package grasspow.tbscclick;
 
 import net.minecraft.client.Minecraft;
 
@@ -15,7 +15,7 @@ public interface IClick {
     boolean isPlayerHandBusy();
 
     void sendMessage(String message);
-    void sendMessageWithId(String message, int id);
+    void sendMessageWithId(String message);
 
     IRayTrace getRayTrace();
     float getSmartAttackCooldown();

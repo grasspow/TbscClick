@@ -1,10 +1,10 @@
-package tbsc.clickmod;
+package grasspow.tbscclick;
 
+import grasspow.tbscclick.impl.TbscClick;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
-import tbsc.clickmod.impl.TbscClick;
+import net.neoforged.fml.util.ObfuscationReflectionHelper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -76,7 +76,7 @@ public class Compat {
             /* HOLD RIGHT CLICK */
 
             // When in another screen, key should be held and right click cooldown is over, right click
-            if (holdingRightButton && !mod.isInGame() && mcReflRightClickDelayTimer() == 0 && !mod.isPlayerHandBusy()) {
+            if (holdingRightButton && !mod.isInGame() && mod.minecraft.rightClickDelay == 0 && !mod.isPlayerHandBusy()) {
                 mcReflRightClick();
             }
 
@@ -117,13 +117,12 @@ public class Compat {
         }
 
         if (mod.getSpeedKey().isDown()) {
-            int chatId = 8327; // magic number
             String plural = "s";
             if ((clickTickInterval += mod.getTicksStepBetweenClicks()) > mod.getMaxTicksBetweenClicks()) {
                 plural = "";
                 clickTickInterval = mod.getMinTicksBetweenClicks();
             }
-            mod.sendMessageWithId("New auto click interval: every " + clickTickInterval + " tick" + plural, chatId);
+            mod.sendMessageWithId("New auto click interval: every " + clickTickInterval + " tick" + plural);
         }
 
         if (mod.getCrouchKey().isDown()) {
@@ -152,7 +151,8 @@ public class Compat {
      * Calls Minecraft.startUseItem using reflection.
      */
     public void mcReflRightClick() {
-        mcReflInvokeMethod(mod.getRightClickMouseMethodMapping());
+//        mcReflInvokeMethod(mod.getRightClickMouseMethodMapping());
+        mod.minecraft.startUseItem();
     }
 
     private Field leftClickCounterField = null;
