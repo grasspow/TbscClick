@@ -31,7 +31,7 @@ displayName="TbscClick" #mandatory
 # A text field displayed in the mod UI
 #credits="Thanks for this example mod goes to Java" #optional
 # A text field displayed in the mod UI
-authors="Tbsc" #optional
+authors="grasspow,Tbsc" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''Autoclicking simplified'''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
